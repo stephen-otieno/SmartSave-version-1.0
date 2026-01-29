@@ -16,6 +16,8 @@ const initiateSTKPush = async (req, res) => {
   const passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
   const password = Buffer.from(shortCode + passkey + timestamp).toString("base64");
 
+  
+
  const stkData = {
     BusinessShortCode: "174379",
     Password: password,
@@ -30,6 +32,8 @@ const initiateSTKPush = async (req, res) => {
     AccountReference: userId, 
     TransactionDesc: "Savings Deposit",
   };
+
+
 
  try {
     const response = await axios.post(
