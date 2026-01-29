@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mpesa-green: #49b248;
+  --color-brand-dark: #1e293b;
+  
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+}
+
+/* This forces the browser to show text correctly */
+@layer base {
+  html, body {
+    @apply bg-white text-slate-900;
+    margin: 0;
+    padding: 0;
+  }
+}
