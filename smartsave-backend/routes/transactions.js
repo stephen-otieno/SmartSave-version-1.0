@@ -1,28 +1,30 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const { generateToken } = require('../middleware/generateToken');
 const { initiateSTKPush, mpesaCallback } = require('../controllers/mpesaController');
-
-// ADD THIS LINE - This is why it was returning nothing or crashing
-const Transaction = require('../models/Transaction'); 
+const Transaction = require('../models/Transaction');
 
 router.post('/stkpush', auth, generateToken, initiateSTKPush);
 router.post('/callback', mpesaCallback);
 
 router.get('/history', auth, async (req, res) => {
     try {
-        console.log("Fetching history for User ID:", req.user.id);
-        
-        // Ensure we find transactions linked to this specific user
-        const transactions = await Transaction.find({ user: req.user.id })
+        // Log to confirm the route is being hit
+        // console.log("Fetching history for User ID:", req.user.id);
+
+        // Convert string ID to ObjectId to ensure MongoDB matches correctly
+        const queryId = new mongoose.Types.ObjectId(req.user.id);
+
+        const transactions = await Transaction.find({ user: queryId })
             .sort({ date: -1 })
             .limit(10);
-            
-        console.log(`Found ${transactions.length} transactions for user.`);
+
+        // console.log(`Successfully found ${transactions.length} transactions.`);
         res.json(transactions);
     } catch (err) {
-        console.error("History Route Error:", err.message);
+        console.error("History fetch error:", err.message);
         res.status(500).send('Server Error');
     }
 });

@@ -21,7 +21,7 @@ const LandingPage = () => {
           <div className="bg-mpesa-green p-2 rounded-lg shadow-sm">
             <Wallet className="text-white w-6 h-6" />
           </div>
-          <span className="font-bold text-brand-dark text-xl tracking-tight">SaveSmart</span>
+          <span className="font-bold text-brand-dark text-xl tracking-tight">SmartSave</span>
         </div>
 
         {/* Hero Section */}

@@ -56,7 +56,7 @@ const Login = () => {
                     </button>
                 </form>
                 <p className="mt-6 text-slate-500">
-                    New to SaveSmart? <a href="/register" className="text-mpesa-green font-bold">Register here</a>
+                    New to SmartSave? <a href="/register" className="text-mpesa-green font-bold">Register here</a>
                 </p>
             </div>
         </div>

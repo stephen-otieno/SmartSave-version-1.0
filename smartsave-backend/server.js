@@ -11,13 +11,15 @@ app.use(express.json());
 
 // Define Routes
 app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/targets', require('./routes/targets'));
+app.use('/api/targets', require('./routes/targets'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/users', require('./routes/users'));
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected...'))
-    .catch(err => console.log(err));
+  .then(() => console.log("MongoDB Connected Successfully"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
+
 
 // Test Route
 app.get('/', (req, res) => res.send('SaveSmart API Running'));

@@ -7,10 +7,14 @@ const UserSchema = new mongoose.Schema({
   mpesaNumber: { type: String, required: true }, // For transaction logic
   savingsBalance: { type: Number, default: 0 }, // For account details view
   tempMerchantID: { type: String },
-  targets: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Target' 
-  }]
-});
+ targets: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Target' // This tells Mongoose to look in the 'targets' collection
+}]
+
+})
+
+
+
 
 module.exports = mongoose.model('User', UserSchema);

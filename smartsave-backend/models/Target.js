@@ -8,12 +8,14 @@ const TargetSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ['general', 'specific'], 
+    // Added 'specific' back just in case, and kept the others
+    enum: ['general', 'education', 'bills', 'furniture', 'electronic', 'other', 'specific'], 
     default: 'general' 
   },
   title: { 
     type: String, 
-    required: function() { return this.type === 'specific'; } 
+    // Changed: Require title for ANY type that isn't 'general'
+    required: function() { return this.type !== 'general'; } 
   },
   targetAmount: { 
     type: Number, 

@@ -5,12 +5,12 @@ const sendSavingsEmail = async (userEmail, userName, amount, targetName) => {
   const time = new Date().toLocaleTimeString('en-KE');
 
   const mailOptions = {
-    from: `"SaveSmart 💰" <${process.env.EMAIL_USER}>`,
+    from: `"SmartSave 💰" <${process.env.EMAIL_USER}>`,
     to: userEmail,
     subject: `Deposit Confirmed: KES ${amount} Saved!`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px;">
-        <h2 style="color: #49b248;">Habari, ${userName}!</h2>
+        <h2 style="color: #49b248;">Hello, ${userName}!</h2>
         <p>Your deposit was successful. You are one step closer to your goal!</p>
         
         <div style="background-color: #f8fafc; padding: 15px; border-radius: 15px; margin: 20px 0;">

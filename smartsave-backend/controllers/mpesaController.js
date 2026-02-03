@@ -1,58 +1,54 @@
 const axios = require('axios');
 const User = require('../models/User');
-const Transaction = require('../models/Transaction'); 
+const Transaction = require('../models/Transaction');
+const Target = require('../models/Target'); // Import Target model for allocation
+const sendSavingsEmail = require('../utils/sendSavingsEmail');
 const mongoose = require('mongoose');
 
 const initiateSTKPush = async (req, res) => {
-  const { phone, amount } = req.body;
-  const token = req.token;
-  const userId = req.user.id;
-  
-  // Format phone to 2547XXXXXXXX
-  const formattedPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone;
+    const { phone, amount } = req.body;
+    const token = req.token;
+    const userId = req.user.id;
 
-  const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
-  const shortCode = "174379"; 
-  const passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
-  const password = Buffer.from(shortCode + passkey + timestamp).toString("base64");
+    // Format phone to 2547XXXXXXXX
+    const formattedPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone;
 
-  
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
+    const shortCode = "174379";
+    const passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
+    const password = Buffer.from(shortCode + passkey + timestamp).toString("base64");
 
- const stkData = {
-    BusinessShortCode: "174379",
-    Password: password,
-    Timestamp: timestamp,
-    TransactionType: "CustomerPayBillOnline",
-    Amount: amount,
-    PartyA: phone, // The source (payer)
-    PartyB: "174379",
-    PhoneNumber: phone,
-    CallBackURL: `${process.env.BASE_URL}/api/transactions/callback`,
-    // WE USE THIS TO TAG THE RECEIVER
-    AccountReference: userId, 
-    TransactionDesc: "Savings Deposit",
-  };
+    const stkData = {
+        BusinessShortCode: "174379",
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: "CustomerPayBillOnline",
+        Amount: amount,
+        PartyA: formattedPhone,
+        PartyB: "174379",
+        PhoneNumber: formattedPhone,
+        CallBackURL: `${process.env.BASE_URL}/api/transactions/callback`,
+        AccountReference: userId,
+        TransactionDesc: "Savings Deposit",
+    };
 
+    try {
+        const response = await axios.post(
+            "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            stkData,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
 
+        if (response.data.ResponseCode === "0") {
+            await User.findByIdAndUpdate(userId, {
+                tempMerchantID: response.data.MerchantRequestID
+            });
+        }
 
- try {
-    const response = await axios.post(
-      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-      stkData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // SAVE THE MERCHANT ID TO THE USER
-    if (response.data.ResponseCode === "0") {
-        await User.findByIdAndUpdate(userId, { 
-            tempMerchantID: response.data.MerchantRequestID 
-        });
+        res.status(200).json(response.data);
+    } catch (err) {
+        res.status(500).json({ msg: "STK Push Failed" });
     }
-
-    res.status(200).json(response.data);
-  } catch (err) {
-    res.status(500).json({ msg: "STK Push Failed" });
-  }
 };
 
 const mpesaCallback = async (req, res) => {
@@ -61,7 +57,6 @@ const mpesaCallback = async (req, res) => {
 
     if (ResultCode === 0) {
         try {
-            // FIND THE USER TAGGED WITH THIS TRANSACTION
             const user = await User.findOne({ tempMerchantID: MerchantRequestID });
 
             if (!user) {
@@ -72,17 +67,40 @@ const mpesaCallback = async (req, res) => {
             const amount = Body.stkCallback.CallbackMetadata.Item.find(i => i.Name === "Amount").Value;
             const receipt = Body.stkCallback.CallbackMetadata.Item.find(i => i.Name === "MpesaReceiptNumber").Value;
 
-            // Update balance and clear the temp ID
-            user.savingsBalance += Number(amount);
-            user.tempMerchantID = null; 
+            // 1. Update User Main Balance
+            user.savingsBalance = (user.savingsBalance || 0) + Number(amount);
+            user.tempMerchantID = null;
             await user.save();
 
-            // Save Transaction record
-            await new Transaction({
+            // 2. AUTOMATIC ALLOCATION: Find and update the latest active target
+            const activeTarget = await Target.findOne({
                 user: user._id,
-                amount,
-                mpesaReceiptNumber: receipt
+                status: 'active'
+            }).sort({ createdAt: -1 });
+
+            if (activeTarget) {
+                activeTarget.currentAmount = (activeTarget.currentAmount || 0) + Number(amount);
+                await activeTarget.save();
+                console.log(`🎯 Auto-allocated KES ${amount} to: ${activeTarget.title}`);
+            }
+
+            // 3. Save Transaction Record
+            await new Transaction({
+                user: new mongoose.Types.ObjectId(user._id),
+                amount: Number(amount),
+                mpesaReceiptNumber: receipt,
+                date: new Date()
             }).save();
+
+            // 4. Trigger Email with the Goal Name
+            if (user.email) {
+                await sendSavingsEmail(
+                    user.email,
+                    user.name.split(' ')[0],
+                    amount,
+                    activeTarget ? activeTarget.title : 'General Savings'
+                );
+            }
 
             console.log(`✅ Success! KES ${amount} added to ${user.name}`);
         } catch (err) {
@@ -92,5 +110,23 @@ const mpesaCallback = async (req, res) => {
     res.json({ msg: "Received" });
 };
 
-module.exports = { initiateSTKPush, mpesaCallback };
+const syncExistingBalances = async () => {
+    try {
+        const usersWithBalance = await User.find({ savingsBalance: { $gt: 0 } });
 
+        for (let user of usersWithBalance) {
+            const activeTarget = await Target.findOne({ user: user._id, status: 'active' });
+
+            if (activeTarget && activeTarget.currentAmount === 0) {
+                // Set the target amount to match the user's current savings
+                activeTarget.currentAmount = user.savingsBalance;
+                await activeTarget.save();
+                console.log(`✅ Synced KES ${user.savingsBalance} for ${user.name}`);
+            }
+        }
+    } catch (err) {
+        console.error("Migration Error:", err.message);
+    }
+};
+
+module.exports = { initiateSTKPush, mpesaCallback };

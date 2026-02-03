@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 // @route   POST /api/auth/register
 // @desc    Register user & capture personalization details
@@ -52,11 +53,11 @@ router.post('/login', async (req, res) => {
 
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' }, (err, token) => {
             if (err) throw err;
-            res.json({ 
-                token, 
-                name: user.name, 
+            res.json({
+                token,
+                name: user.name,
                 balance: user.savingsBalance,
-                mpesaNumber: user.mpesaNumber 
+                mpesaNumber: user.mpesaNumber
             });
         });
     } catch (err) {
@@ -65,4 +66,19 @@ router.post('/login', async (req, res) => {
     }
 });
 
+
+// @route   GET api/auth/user
+// @desc    Get current user data (required for balance refresh)
+router.get('/', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id)
+            .select('-password')
+            .populate('targets');
+        if (!user) return res.status(404).json({ msg: "User not found" });
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 module.exports = router;
