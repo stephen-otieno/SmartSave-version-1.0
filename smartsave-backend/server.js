@@ -4,6 +4,11 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
+const cors = require("cors");
+
+app.use(cors({
+  origin: "*"
+}));
 
 // Middleware
 app.use(cors());
