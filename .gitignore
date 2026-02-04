@@ -4,3 +4,4 @@ smartsave/ .env
 SmartSave/dist/
 SmartSave/node_modules/
 smartsave-backend/node_modules/
+.vercel
