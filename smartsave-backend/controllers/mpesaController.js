@@ -71,17 +71,26 @@ const mpesaCallback = async (req, res) => {
             user.savingsBalance = (user.savingsBalance || 0) + Number(amount);
             user.tempMerchantID = null;
             await user.save();
+            
 
-            // 2. AUTOMATIC ALLOCATION: Find and update the latest active target
-            const activeTarget = await Target.findOne({
-                user: user._id,
-                status: 'active'
-            }).sort({ createdAt: -1 });
+            // NEW: Percentage Split Logic
+            if (user.savingsRules && user.savingsRules.length > 0) {
+                for (const rule of user.savingsRules) {
+                    const share = (Number(amount) * (rule.percentage / 100));
 
-            if (activeTarget) {
-                activeTarget.currentAmount = (activeTarget.currentAmount || 0) + Number(amount);
-                await activeTarget.save();
-                console.log(`🎯 Auto-allocated KES ${amount} to: ${activeTarget.title}`);
+                    await Target.findByIdAndUpdate(rule.targetId, {
+                        $inc: { currentAmount: share }
+                    });
+
+                    console.log(`Allocated KES ${share.toFixed(2)} (${rule.percentage}%) to target ${rule.targetId}`);
+                }
+            } else {
+                // Fallback: If no rules exist, put 100% into the latest active target
+                const activeTarget = await Target.findOne({ user: user._id, status: 'active' }).sort({ createdAt: -1 });
+                if (activeTarget) {
+                    activeTarget.currentAmount += Number(amount);
+                    await activeTarget.save();
+                }
             }
 
             // 3. Save Transaction Record

@@ -1,14 +1,15 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Home, Target, CreditCard, User, Plus, TrendingUp, ArrowDownLeft } from 'lucide-react';
+import { Home, Target, CreditCard, User, Plus, TrendingUp, ArrowDownLeft, LogOut } from 'lucide-react';
 import DepositModal from '../components/DepositModal';
 import SetTargetModal from '../components/SetTargetModal';
+import AllocationManager from '../components/AllocationManager';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 
 const Dashboard = () => {
     // 1. Ensure setUser is destructured from Context
-    const { user, setUser } = useContext(AuthContext) || { user: null, setUser: () => { } };
+    const { user, setUser, logout } = useContext(AuthContext) || { user: null, setUser: () => { }, logout: () => { } };
     const [isDepositOpen, setIsDepositOpen] = useState(false);
     const [isTargetOpen, setIsTargetOpen] = useState(false);
     const [transactions, setTransactions] = useState([]);
@@ -155,6 +156,13 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+
+                <AllocationManager
+                    targets={user?.targets || []}
+                    currentRules={user?.savingsRules || []}
+                    onUpdate={refreshUserData}
+                />
+
                 {/* Targets Section */}
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
@@ -244,27 +252,51 @@ const Dashboard = () => {
                 </div>
             </main>
 
+            {/* Mobile Navigation Bar */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center z-50">
-                <Home className="text-mpesa-green" />
-                {/* Fixed the button logic here */}
-                <button onClick={() => setIsTargetOpen(true)}><Target className="text-slate-400" /></button>
-                <button onClick={() => setIsDepositOpen(true)} className="bg-mpesa-green text-white p-4 rounded-2xl -mt-14 shadow-lg active:scale-95"><Plus size={24} /></button>
-                <CreditCard className="text-slate-400" />
-                <User className="text-slate-400" />
+                <button onClick={() => window.location.href = '/'}>
+                    <Home className="text-mpesa-green" />
+                </button>
+
+                <button onClick={() => setIsTargetOpen(true)}>
+                    <Target className="text-slate-400" />
+                </button>
+
+                <button onClick={() => setIsDepositOpen(true)} className="bg-mpesa-green text-white p-4 rounded-2xl -mt-14 shadow-lg active:scale-95">
+                    <Plus size={24} />
+                </button>
+
+                <button onClick={() => {/* Add transaction navigation here */ }}>
+                    <CreditCard className="text-slate-400" />
+                </button>
+
+                {/* Swapped User for LogOut */}
+                <button onClick={logout} className="text-red-500 active:scale-90 transition-transform">
+                    <LogOut size={24} />
+                </button>
             </nav>
 
-            <DepositModal
-                isOpen={isDepositOpen}
-                onClose={() => setIsDepositOpen(false)}
-            />
+            {/* <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center z-50">
+                <Home className="text-mpesa-green" /> */}
+                {/* Fixed the button logic here */}
+            {/* <button onClick={() => setIsTargetOpen(true)}><Target className="text-slate-400" /></button>
+            <button onClick={() => setIsDepositOpen(true)} className="bg-mpesa-green text-white p-4 rounded-2xl -mt-14 shadow-lg active:scale-95"><Plus size={24} /></button>
+            <CreditCard className="text-slate-400" />
+            <User className="text-slate-400" /> */}
+        {/* </nav> */}
 
-            {/* Ensure this is the ONLY SetTargetModal and it's INSIDE the Dashboard function */}
-            <SetTargetModal
-                isOpen={isTargetOpen}
-                onClose={() => setIsTargetOpen(false)}
-                refreshData={refreshUserData}
-            />
-        </div>
+<DepositModal
+    isOpen={isDepositOpen}
+    onClose={() => setIsDepositOpen(false)}
+/>
+
+{/* Ensure this is the ONLY SetTargetModal and it's INSIDE the Dashboard function */ }
+<SetTargetModal
+    isOpen={isTargetOpen}
+    onClose={() => setIsTargetOpen(false)}
+    refreshData={refreshUserData}
+/>
+        </div >
     );
 };
 

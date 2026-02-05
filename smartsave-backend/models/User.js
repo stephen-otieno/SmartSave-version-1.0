@@ -10,6 +10,17 @@ const UserSchema = new mongoose.Schema({
  targets: [{
   type: mongoose.Schema.Types.ObjectId,
   ref: 'Target' // This tells Mongoose to look in the 'targets' collection
+}],
+savingsRules: [{
+    targetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Target'
+    },
+    percentage: {
+        type: Number,
+        min: 0,
+        max: 100
+    }
 }]
 
 })
