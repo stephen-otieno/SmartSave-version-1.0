@@ -14,8 +14,8 @@ const SetTargetModal = ({ isOpen, onClose, refreshData }) => { // Added refreshD
 
     // 1. Check if the amount is valid
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
-        alert("Please enter a valid target amount.");
-        return;
+      alert("Please enter a valid target amount.");
+      return;
     }
 
     // 1. Correctly retrieve the token from the object
@@ -114,7 +114,12 @@ const SetTargetModal = ({ isOpen, onClose, refreshData }) => { // Added refreshD
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
-              <DollarSign className="absolute left-4 top-4 text-slate-400" size={20} />
+              {/* <DollarSign className="absolute left-4 top-4 text-slate-400" size={20} /> */}
+              <span className="absolute left-4 top-4 text-slate-400 text-lg">
+                KES
+              </span>
+
+
             </div>
           </div>
 
