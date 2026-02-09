@@ -26,7 +26,7 @@ const Register = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
             <div className="w-full max-w-md bg-white p-8 rounded-[2.5rem] shadow-xl">
-                <h1 className="text-3xl font-black text-brand-dark mb-2">Join SaveSmart</h1>
+                <h1 className="text-3xl font-black text-brand-dark mb-2">Join SmartSave</h1>
                 <p className="text-slate-500 mb-8">Secure your future, one KES at a time.</p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
