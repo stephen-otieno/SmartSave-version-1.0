@@ -71,25 +71,31 @@ const mpesaCallback = async (req, res) => {
             user.savingsBalance = (user.savingsBalance || 0) + Number(amount);
             user.tempMerchantID = null;
             await user.save();
-            
 
-            // NEW: Percentage Split Logic
+            // --- ALLOCATION LOGIC ---
+            // Define a variable to hold the name of the goal for the email
+            let goalName = 'General Savings';
+
             if (user.savingsRules && user.savingsRules.length > 0) {
+                // Percentage Split Path
                 for (const rule of user.savingsRules) {
                     const share = (Number(amount) * (rule.percentage / 100));
-
                     await Target.findByIdAndUpdate(rule.targetId, {
                         $inc: { currentAmount: share }
                     });
-
-                    console.log(`Allocated KES ${share.toFixed(2)} (${rule.percentage}%) to target ${rule.targetId}`);
                 }
+                goalName = "Multiple Goals (Split)"; // Optional: Change if rules exist
             } else {
-                // Fallback: If no rules exist, put 100% into the latest active target
-                const activeTarget = await Target.findOne({ user: user._id, status: 'active' }).sort({ createdAt: -1 });
+                // Fallback Path: 100% to latest target
+                const activeTarget = await Target.findOne({
+                    user: user._id,
+                    status: 'active'
+                }).sort({ createdAt: -1 });
+
                 if (activeTarget) {
                     activeTarget.currentAmount += Number(amount);
                     await activeTarget.save();
+                    goalName = activeTarget.title; // Assign the title here
                 }
             }
 
@@ -101,13 +107,13 @@ const mpesaCallback = async (req, res) => {
                 date: new Date()
             }).save();
 
-            // 4. Trigger Email with the Goal Name
+            // 4. Trigger Email (Now uses the goalName variable defined above)
             if (user.email) {
                 await sendSavingsEmail(
                     user.email,
                     user.name.split(' ')[0],
                     amount,
-                    activeTarget ? activeTarget.title : 'General Savings'
+                    goalName
                 );
             }
 
