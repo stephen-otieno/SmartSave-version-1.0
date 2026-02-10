@@ -13,7 +13,7 @@ const DepositModal = ({ isOpen, onClose }) => {
   const destinations = [
     { id: 'mpesa', label: 'Other M-Pesa', icon: <Smartphone />, desc: 'Send to another number' },
     { id: 'bank', label: 'Bank Account', icon: <Building2 />, desc: 'Transfer to any bank' },
-    { id: 'till', label: 'Till / Paybill', icon: <Store />, desc: 'Pay a business' },
+    { id: 'till', label: 'Till', icon: <Store />, desc: 'Pay a business' },
     { id: 'savings', label: 'My Savings', icon: <Wallet />, desc: 'Deposit to your goal' },
   ];
 
@@ -105,7 +105,7 @@ const DepositModal = ({ isOpen, onClose }) => {
 
             {type !== 'mpesa' && type !== 'savings' && (
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Account / Till Number</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Account Number</label>
                 <input
                   type="text"
                   placeholder="Enter details"

@@ -18,10 +18,15 @@ app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/users', require('./routes/users'));
 
 // Database Connection
+// Database Connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected Successfully"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
+mongoose.connection.on('connected', () => {
+  console.log('📡 Active DB:', mongoose.connection.name);
+  console.log('🏠 Host:', mongoose.connection.host);
+});
 
 // Test Route
 app.get('/', (req, res) => res.send('SaveSmart API Running'));
